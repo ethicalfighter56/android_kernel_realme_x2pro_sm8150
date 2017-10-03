@@ -317,6 +317,11 @@ static void check_unit_address_vs_reg(struct check *c, struct dt_info *dti,
 	const char *unitname = get_unitname(node);
 	struct property *prop = get_property(node, "reg");
 
+	if (get_subnode(node, "__overlay__")) {
+		/* HACK: Overlay fragments are a special case */
+		return;
+	}
+
 	if (!prop) {
 		prop = get_property(node, "ranges");
 		if (prop && !prop->val.len)
@@ -579,6 +584,8 @@ static void fixup_phandle_references(struct check *c, struct dt_info *dti,
 
 			phandle = get_node_phandle(dt, refnode);
 			*((fdt32_t *)(prop->val.val + m->offset)) = cpu_to_fdt32(phandle);
+
+			reference_node(refnode);
 		}
 	}
 }
@@ -609,10 +616,20 @@ static void fixup_path_references(struct check *c, struct dt_info *dti,
 			path = refnode->fullpath;
 			prop->val = data_insert_at_marker(prop->val, m, path,
 							  strlen(path) + 1);
+
+			reference_node(refnode);
 		}
 	}
 }
 ERROR(path_references, fixup_path_references, NULL, &duplicate_node_names);
+
+static void fixup_omit_unused_nodes(struct check *c, struct dt_info *dti,
+				    struct node *node)
+{
+	if (node->omit_if_unused && !node->is_referenced)
+		delete_node(node);
+}
+ERROR(omit_unused_nodes, fixup_omit_unused_nodes, NULL, &phandle_references, &path_references);
 
 /*
  * Semantic checks
@@ -1367,6 +1384,7 @@ static struct check *check_table[] = {
 
 	&explicit_phandles,
 	&phandle_references, &path_references,
+	&omit_unused_nodes,
 
 	&address_cells_is_cell, &size_cells_is_cell, &interrupt_cells_is_cell,
 	&device_type_is_string, &model_is_string, &status_is_string,
