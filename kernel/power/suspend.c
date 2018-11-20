@@ -36,6 +36,11 @@
 
 #include "power.h"
 #include <soc/qcom/boot_stats.h>
+#include <linux/soc/qcom/smem_state.h>
+
+#define PROC_AWAKE_ID 12 /* 12th bit */
+#define AWAKE_BIT BIT(PROC_AWAKE_ID)
+extern struct qcom_smem_state *smem_state;
 
 #define PROC_AWAKE_ID 12 /* 12th bit */
 #define AWAKE_BIT BIT(PROC_AWAKE_ID)
