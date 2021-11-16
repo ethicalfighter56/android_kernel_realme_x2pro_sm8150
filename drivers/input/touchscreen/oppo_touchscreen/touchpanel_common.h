@@ -65,8 +65,6 @@
 #define FingerprintUp       15
 #define SingleTap           16
 #define Heart               17
-#define SGESTRUE            18  /* S */
-#define KEY_GESTURE_START   246
 #define HEALTH_REPORT_GRIP          "grip_report"
 #define HEALTH_REPORT_BASELINE_ERR  "baseline_err"
 #define HEALTH_REPORT_NOISE         "noise_count"
@@ -687,7 +685,6 @@ struct touchpanel_data {
     bool glove_mode_support;                            /*glove_mode support feature*/
     bool black_gesture_support;                         /*black_gesture support feature*/
     bool single_tap_support;                            /*black_gesture support feature*/
-    bool black_gesture_indep_support;                   /*black_gesture indep control support feature*/
     bool charger_pump_support;                          /*charger_pump support feature*/
     bool wireless_charger_support;                      /*wireless_charger support feature*/
     bool headset_pump_support;                          /*headset_pump support feature*/
@@ -749,11 +746,9 @@ struct touchpanel_data {
     uint32_t irq_flags_cover;                           /*cover irq setting flag*/
 
     int gesture_enable;                                 /*control state of black gesture*/
-    bool double_tap_to_wake_enable;                     /*control state of dt2w*/
 #if GESTURE_RATE_MODE
     int geature_ignore;
 #endif
-    int gesture_enable_indep;                           /*independent control state of black gesture*/
     int palm_enable;
     int es_enable;
     int fd_enable;
@@ -954,7 +949,6 @@ struct oppo_touchpanel_operations {
 #endif
     int  (*tp_refresh_switch)         (void *chip_data, int fps);
     int  (*tp_set_grip_level)         (void *chip_data, int level);
-    void (*set_gesture_state)(void *chip_data, int state);
 
 };
 
