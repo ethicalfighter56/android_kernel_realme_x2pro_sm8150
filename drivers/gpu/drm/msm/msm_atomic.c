@@ -73,6 +73,11 @@ EXPORT_SYMBOL(msm_drm_unregister_client);
  * @v: notifier data, inculde display id and display blank
  *     event(unblank or power down).
  */
+
+#ifndef OPLUS_BUG_STABILITY
+/* Sachin Shukla@PSW.MM.Display.Lcd.Stability, 2018-05-31
+* add for export drm_notifier
+*/
 static bool notifier_enabled __read_mostly = true;
 int msm_drm_notifier_call_chain(unsigned long val, void *v)
 {
