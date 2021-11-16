@@ -14,9 +14,6 @@
 * Revision 1.1        2016-03-07        wenbin.liu@SW.Bsp.Driver       edit for log optimize
 * Revision 2.0        2018-04-14        Fanhong.Kong@ProDrv.CHG        Upgrade for SVOOC
 ***********************************************************************************/
-
-#define pr_fmt(fmt) "[OPLUS_CHG][%s:%d]" fmt, __func__, __LINE__
-
 #include <linux/delay.h>
 #include <linux/power_supply.h>
 #include <linux/proc_fs.h>
@@ -93,6 +90,7 @@ static struct oplus_chg_chip *g_charger_chip = NULL;
 
 #define OPLUS_CHG_DEFAULT_CHARGING_CURRENT	512
 
+int enable_charger_log = 2;
 int charger_abnormal_log = 0;
 int tbatt_pwroff_enable = 1;
 static int mcu_status = 0;
@@ -100,7 +98,13 @@ static u8 soc_store[4]= {0};
 static u8 night_count = 0;
 extern bool oplus_is_power_off_charging(struct oplus_vooc_chip *chip);
 
-#define charger_xlog_printk(num, ...) chg_debug(__VA_ARGS__)
+/* wenbin.liu@SW.Bsp.Driver, 2016/03/01  Add for log tag*/
+#define charger_xlog_printk(num, fmt, ...) \
+		do { \
+			if (enable_charger_log >= (int)num) { \
+				printk(KERN_NOTICE pr_fmt("[OPLUS_CHG][%s]"fmt), __func__, ##__VA_ARGS__); \
+			} \
+		} while (0)
 
 void oplus_chg_turn_off_charging(struct oplus_chg_chip *chip);
 void oplus_chg_turn_on_charging(struct oplus_chg_chip *chip);
@@ -639,7 +643,7 @@ int oplus_battery_get_property(struct power_supply *psy,
 			} else if (!chip->authenticate) {
 				val->intval = POWER_SUPPLY_STATUS_NOT_CHARGING;
 			} else {
-				val->intval = chip->prop_status == POWER_SUPPLY_STATUS_NOT_CHARGING ? POWER_SUPPLY_STATUS_DISCHARGING : chip->prop_status;
+				val->intval = chip->prop_status;
 			}
 			break;
 		case POWER_SUPPLY_PROP_HEALTH:
@@ -983,17 +987,39 @@ static int init_proc_tbatt_pwroff(void)
 static ssize_t chg_log_write(struct file *filp,
 		const char __user *buff, size_t len, loff_t *data)
 {
+	char write_data[32] = {0};
+
+	if (copy_from_user(&write_data, buff, len)) {
+		chg_err("bat_log_write error.\n");
+		return -EFAULT;
+	}
+	if (write_data[0] == '1') {
+		charger_xlog_printk(CHG_LOG_CRTI, "enable battery driver log system\n");
+		enable_charger_log = 1;
+	} else if ((write_data[0] >= '2') &&(write_data[0] <= '9')) {
+		charger_xlog_printk(CHG_LOG_CRTI, "enable battery driver log system:2\n");
+		enable_charger_log = 2;
+	} else {
+		charger_xlog_printk(CHG_LOG_CRTI, "Disable battery driver log system\n");
+		enable_charger_log = 0;
+	}
 	return len;
 }
 
 static ssize_t chg_log_read(struct file *filp,
 		char __user *buff, size_t count, loff_t *off)
 {
-        char page[256] = {0};
-        char read_data[32] = {0};
-        int len = 0;
+	char page[256] = {0};
+	char read_data[32] = {0};
+	int len = 0;
 
-	read_data[0] = '0';
+	if (enable_charger_log == 1) {
+		read_data[0] = '1';
+	} else if (enable_charger_log == 2) {
+		read_data[0] = '2';
+	} else {
+		read_data[0] = '0';
+	}
 	len = sprintf(page, "%s", read_data);
 	if (len > *off) {
 		len -= *off;
@@ -6098,7 +6124,7 @@ static void oplus_chg_update_ui_soc(struct oplus_chg_chip *chip)
 		}
 	} else {
 		cnt = 0;
-		chip->prop_status = POWER_SUPPLY_STATUS_DISCHARGING;
+		chip->prop_status = POWER_SUPPLY_STATUS_NOT_CHARGING;
 		soc_up_count = 0;
 		if (chip->smooth_soc <= chip->ui_soc || vbatt_too_low) {
 			if (soc_down_count > soc_down_limit) {
