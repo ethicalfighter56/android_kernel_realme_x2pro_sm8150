@@ -3702,8 +3702,8 @@ static int msm_geni_serial_sys_hib_resume_noirq(struct device *dev)
 static const struct dev_pm_ops msm_geni_serial_pm_ops = {
 	.runtime_suspend = msm_geni_serial_runtime_suspend,
 	.runtime_resume = msm_geni_serial_runtime_resume,
-	.suspend_noirq = msm_geni_serial_sys_suspend,
-	.resume_noirq = msm_geni_serial_sys_resume,
+	.suspend = msm_geni_serial_sys_suspend,
+	.resume = msm_geni_serial_sys_resume,
 	.freeze = msm_geni_serial_sys_suspend,
 	.restore = msm_geni_serial_sys_hib_resume_noirq,
 	.thaw = msm_geni_serial_sys_hib_resume_noirq,
