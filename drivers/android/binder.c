@@ -2883,15 +2883,12 @@ static bool binder_proc_transaction(struct binder_transaction *t,
 	if (!thread && !pending_async)
 		thread = binder_select_thread_ilocked(proc);
 
-	if (thread) {
-		binder_transaction_priority(thread->task, t, node_prio,
-					    node->inherit_rt);
+	if (thread)
 		binder_enqueue_thread_work_ilocked(thread, &t->work);
-	} else if (!pending_async) {
+	else if (!pending_async)
 		binder_enqueue_work_ilocked(&t->work, &proc->todo);
-	} else {
+	else
 		binder_enqueue_work_ilocked(&t->work, &node->async_todo);
-	}
 
 	if (!pending_async)
 		binder_wakeup_thread_ilocked(proc, thread, !oneway /* sync */);
