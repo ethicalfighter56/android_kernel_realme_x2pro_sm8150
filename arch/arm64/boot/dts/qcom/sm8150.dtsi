@@ -549,7 +549,7 @@
 	};
 
 	chosen {
-		bootargs = "quiet rcupdate.rcu_expedited=1 rcu_nocbs=0-7 cgroup.memory=nokmem,nosocket nosoftlockup mce=ignore_ce";
+		bootargs = "rcupdate.rcu_expedited=1 rcu_nocbs=0-7 cgroup.memory=nokmem,nosocket";
 	};
 
 	soc: soc { };
@@ -778,6 +778,12 @@
 			size = <0x0 0xA000000>;
 		};
 
+		dump_mem: mem_dump_region {
+			compatible = "shared-dma-pool";
+			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
+			reusable;
+			size = <0 0x2400000>;
+		};
 		// #ifdef OPLUS_BUG_STABILITY
 		// #zhangzongyu@BSP.kernel.stability, 2020/05/15, Add for dump device info
 		// #endif
@@ -859,7 +865,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU0>;
-		status = "disabled";
 	};
 
 	jtag_mm1: jtagmm@7140000 {
@@ -871,7 +876,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU1>;
-		status = "disabled";
 	};
 
 	jtag_mm2: jtagmm@7240000 {
@@ -883,7 +887,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU2>;
-		status = "disabled";
 	};
 
 	jtag_mm3: jtagmm@7340000 {
@@ -895,7 +898,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU3>;
-		status = "disabled";
 	};
 
 	jtag_mm4: jtagmm@7440000 {
@@ -907,7 +909,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU4>;
-		status = "disabled";
 	};
 
 	jtag_mm5: jtagmm@7540000 {
@@ -919,7 +920,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU5>;
-		status = "disabled";
 	};
 
 	jtag_mm6: jtagmm@7640000 {
@@ -931,7 +931,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU6>;
-		status = "disabled";
 	};
 
 	jtag_mm7: jtagmm@7740000 {
@@ -943,7 +942,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU7>;
-		status = "disabled";
 	};
 
 	intc: interrupt-controller@17a00000 {
@@ -1634,7 +1632,7 @@
 			<1824000>,
 			<1900800>,
 			<1977600>,
-			<2054400>;		
+			<2054400>;
 	};
 
 	clock_debugcc: qcom,cc-debug {
@@ -1943,6 +1941,7 @@
 		//endif
 		qcom,pet-time = <9360>;
 		qcom,ipi-ping;
+		qcom,wakeup-enable;
 		qcom,scandump-sizes = <0x10100 0x10100 0x10100 0x10100
 		0x18100 0x18100 0x18100 0x18100>;
 	};
@@ -2938,7 +2937,7 @@
 
 				msm_cdsp_rm: qcom,msm_cdsp_rm {
 					compatible = "qcom,msm-cdsp-rm";
-					qcom,qos-latency-us = <67>;
+					qcom,qos-latency-us = <44>;
 					qcom,qos-maxhold-ms = <20>;
 					qcom,compute-cx-limit-en;
 					qcom,compute-priority-mode = <2>;
@@ -3244,6 +3243,61 @@
 		qcom,no-clock-support;
 		iommus = <&apps_smmu 0x0504 0x0011>,
 			 <&apps_smmu 0x0514 0x0011>;
+	};
+
+	mem_dump {
+		compatible = "qcom,mem-dump";
+		memory-region = <&dump_mem>;
+
+		rpmh {
+			qcom,dump-size = <0x2000000>;
+			qcom,dump-id = <0xec>;
+		};
+
+		rpm_sw {
+			qcom,dump-size = <0x28000>;
+			qcom,dump-id = <0xea>;
+		};
+
+		pmic {
+			qcom,dump-size = <0x80000>;
+			qcom,dump-id = <0xe4>;
+		};
+
+		fcm {
+			qcom,dump-size = <0x8400>;
+			qcom,dump-id = <0xee>;
+		};
+
+		tmc_etf {
+			qcom,dump-size = <0x10000>;
+			qcom,dump-id = <0xf0>;
+		};
+
+		etf_swao {
+			qcom,dump-size = <0x8400>;
+			qcom,dump-id = <0xf1>;
+		};
+
+		etr_reg {
+			qcom,dump-size = <0x1000>;
+			qcom,dump-id = <0x100>;
+		};
+
+		etf_reg {
+			qcom,dump-size = <0x1000>;
+			qcom,dump-id = <0x101>;
+		};
+
+		etfswao_reg {
+			qcom,dump-size = <0x1000>;
+			qcom,dump-id = <0x102>;
+		};
+
+		misc_data {
+			qcom,dump-size = <0x1000>;
+			qcom,dump-id = <0xe8>;
+		};
 	};
 
 	qcom_tzlog: tz-log@146bf720 {
