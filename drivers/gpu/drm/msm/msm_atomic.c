@@ -73,11 +73,6 @@ EXPORT_SYMBOL(msm_drm_unregister_client);
  * @v: notifier data, inculde display id and display blank
  *     event(unblank or power down).
  */
-
-#ifndef OPLUS_BUG_STABILITY
-/* Sachin Shukla@PSW.MM.Display.Lcd.Stability, 2018-05-31
-* add for export drm_notifier
-*/
 static bool notifier_enabled __read_mostly = true;
 int msm_drm_notifier_call_chain(unsigned long val, void *v)
 {
@@ -87,7 +82,6 @@ int msm_drm_notifier_call_chain(unsigned long val, void *v)
 	return blocking_notifier_call_chain(&msm_drm_notifier_list, val,
 					    v);
 }
-#else /*OPLUS_BUG_STABILITY*/
 EXPORT_SYMBOL(msm_drm_notifier_call_chain);
 
 void msm_drm_notifier_enable(bool val)
@@ -95,7 +89,6 @@ void msm_drm_notifier_enable(bool val)
 	notifier_enabled = val;
 	mb();
 }
-#endif /*OPLUS_BUG_STABILITY*/
 EXPORT_SYMBOL(msm_drm_notifier_enable);
 
 /* block until specified crtcs are no longer pending update, and
