@@ -588,12 +588,13 @@ static inline bool is_cpu_biased(int cpu, uint64_t *bias_time)
 }
 
 static int cpu_power_select(struct cpuidle_device *dev,
-		struct lpm_cpu *cpu, s64 sleep_us)
+		struct lpm_cpu *cpu)
 {
 	int best_level = 0;
 	uint32_t latency_us = pm_qos_request_for_cpu(PM_QOS_CPU_DMA_LATENCY,
 							dev->cpu);
 	ktime_t delta_next;
+	s64 sleep_us = ktime_to_us(tick_nohz_get_sleep_length(&delta_next));
 	uint32_t modified_time_us = 0;
 	uint32_t next_event_us = 0;
 	int i, idx_restrict;
@@ -1323,16 +1324,11 @@ static int lpm_cpuidle_select(struct cpuidle_driver *drv,
 		struct cpuidle_device *dev, bool *stop_tick)
 {
 	struct lpm_cpu *cpu = per_cpu(cpu_lpm, dev->cpu);
-	ktime_t delta_next;
-	ktime_t duration = tick_nohz_get_sleep_length(&delta_next);
-
-	if (duration <= TICK_NSEC)
-		*stop_tick = false;
 
 	if (!cpu)
 		return 0;
 
-	return cpu_power_select(dev, cpu, ktime_to_us(duration));
+	return cpu_power_select(dev, cpu);
 }
 
 static void update_history(struct cpuidle_device *dev, int idx)
