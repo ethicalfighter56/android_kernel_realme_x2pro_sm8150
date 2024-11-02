@@ -74,17 +74,17 @@ MODULE_PARM_DESC(mem_size,
 		"size of reserved RAM used to store oops/panic logs");
 
 static unsigned int mem_type;
-module_param(mem_type, uint, 0600);
+module_param(mem_type, uint, 0400);
 MODULE_PARM_DESC(mem_type,
 		"set to 1 to try to use unbuffered memory (default 0)");
 
 static int dump_oops = 1;
-module_param(dump_oops, int, 0600);
+module_param(dump_oops, int, 0400);
 MODULE_PARM_DESC(dump_oops,
 		"set to 1 to dump oopses, 0 to only dump panics (default 1)");
 
 static int ramoops_ecc;
-module_param_named(ecc, ramoops_ecc, int, 0600);
+module_param_named(ecc, ramoops_ecc, int, 0400);
 MODULE_PARM_DESC(ramoops_ecc,
 		"if non-zero, the option enables ECC support and specifies "
 		"ECC buffer size in bytes (1 is a special value, means 16 "
@@ -379,17 +379,15 @@ out:
 static size_t ramoops_write_kmsg_hdr(struct persistent_ram_zone *prz,
 				     struct pstore_record *record)
 {
-	char *hdr;
+	char hdr[36]; /* "===="(4), %lld(20), "."(1), %06lu(6), "-%c\n"(3) */
 	size_t len;
 
-	hdr = kasprintf(GFP_ATOMIC, RAMOOPS_KERNMSG_HDR "%lu.%lu-%c\n",
+	len = scnprintf(hdr, sizeof(hdr),
+		RAMOOPS_KERNMSG_HDR "%lu.%lu-%c\n",
 		record->time.tv_sec,
 		record->time.tv_nsec / 1000,
 		record->compressed ? 'C' : 'D');
-	WARN_ON_ONCE(!hdr);
-	len = hdr ? strlen(hdr) : 0;
 	persistent_ram_write(prz, hdr, len);
-	kfree(hdr);
 
 	return len;
 }
@@ -476,6 +474,9 @@ static int notrace ramoops_pstore_write(struct pstore_record *record)
 
 	/* Build header and append record contents. */
 	hlen = ramoops_write_kmsg_hdr(prz, record);
+	if (!hlen)
+		return -ENOMEM;
+
 	size = record->size;
 	if (size + hlen > prz->buffer_size)
 		size = prz->buffer_size - hlen;
@@ -692,19 +693,25 @@ static int ramoops_init_prz(const char *name,
 	return 0;
 }
 
-static int ramoops_parse_dt_size(struct platform_device *pdev,
-				 const char *propname, u32 *value)
+/* Read a u32 from a dt property and make sure it's safe for an int. */
+static int ramoops_parse_dt_u32(struct platform_device *pdev,
+				const char *propname,
+				u32 default_value, u32 *value)
 {
 	u32 val32 = 0;
 	int ret;
 
 	ret = of_property_read_u32(pdev->dev.of_node, propname, &val32);
-	if (ret < 0 && ret != -EINVAL) {
+	if (ret == -EINVAL) {
+		/* field is missing, use default value. */
+		val32 = default_value;
+	} else if (ret < 0) {
 		dev_err(&pdev->dev, "failed to parse property %s: %d\n",
 			propname, ret);
 		return ret;
 	}
 
+	/* Sanity check our results. */
 	if (val32 > INT_MAX) {
 		dev_err(&pdev->dev, "%s %u > INT_MAX\n", propname, val32);
 		return -EOVERFLOW;
@@ -736,25 +743,26 @@ static int ramoops_parse_dt(struct platform_device *pdev,
 	pdata->mem_type = of_property_read_bool(of_node, "unbuffered");
 	pdata->dump_oops = !of_property_read_bool(of_node, "no-dump-oops");
 
-#define parse_size(name, field) {					\
-		ret = ramoops_parse_dt_size(pdev, name, &value);	\
+#define parse_u32(name, field, default_value) {				\
+		ret = ramoops_parse_dt_u32(pdev, name, default_value,	\
+					    &value);			\
 		if (ret < 0)						\
 			return ret;					\
 		field = value;						\
 	}
 
-	parse_size("record-size", pdata->record_size);
-	parse_size("console-size", pdata->console_size);
-	parse_size("ftrace-size", pdata->ftrace_size);
-	parse_size("pmsg-size", pdata->pmsg_size);
+	parse_u32("record-size", pdata->record_size, 0);
+	parse_u32("console-size", pdata->console_size, 0);
+	parse_u32("ftrace-size", pdata->ftrace_size, 0);
+	parse_u32("pmsg-size", pdata->pmsg_size, 0);
 #ifdef OPLUS_FEATURE_DUMPDEVICE
 //zhangzongyu@BSP.Kernel.Stability, 2020/05/10, Add for dump device info
-	parse_size("devinfo-size", pdata->device_info_size);
+	parse_u32("devinfo-size", pdata->device_info_size, 0);
 #endif /* OPLUS_FEATURE_DUMPDEVICE */
-	parse_size("ecc-size", pdata->ecc_info.ecc_size);
-	parse_size("flags", pdata->flags);
+	parse_u32("ecc-size", pdata->ecc_info.ecc_size, 0);
+	parse_u32("flags", pdata->flags, 0);
 
-#undef parse_size
+#undef parse_u32
 
 	return 0;
 }
@@ -775,15 +783,6 @@ static int ramoops_probe(struct platform_device *pdev)
 	phys_addr_t paddr;
 	int err = -EINVAL;
 
-	if (dev_of_node(dev) && !pdata) {
-		pdata = &pdata_local;
-		memset(pdata, 0, sizeof(*pdata));
-
-		err = ramoops_parse_dt(pdev, pdata);
-		if (err < 0)
-			goto fail_out;
-	}
-
 	/*
 	 * Only a single ramoops area allowed at a time, so fail extra
 	 * probes.
@@ -791,6 +790,15 @@ static int ramoops_probe(struct platform_device *pdev)
 	if (cxt->max_dump_cnt) {
 		pr_err("already initialized\n");
 		goto fail_out;
+	}
+
+	if (dev_of_node(dev) && !pdata) {
+		pdata = &pdata_local;
+		memset(pdata, 0, sizeof(*pdata));
+
+		err = ramoops_parse_dt(pdev, pdata);
+		if (err < 0)
+			goto fail_out;
 	}
 
 	/* Make sure we didn't get bogus platform data pointer. */

@@ -38,6 +38,8 @@
 		qcom,mdss-dsi-bl-max-level = <1023>;
 		qcom,mdss-brightness-default-val = <400>;
 		qcom,mdss-brightness-max-level = <1023>;
+		qcom,mdss-dsi-bl-normal-max-level = <1023>;
+		qcom,mdss-brightness-normal-max-level = <1023>;
 		qcom,mdss-dsi-te-pin-select = <1>;
 		qcom,mdss-dsi-wr-mem-start = <0x2c>;
 		qcom,mdss-dsi-wr-mem-continue = <0x3c>;
@@ -51,6 +53,46 @@
 			16000 13250 34500 7500 3000>;
 		qcom,mdss-dsi-panel-peak-brightness = <4300000>;
 		qcom,mdss-dsi-panel-blackness-level = <1023>;
+		oplus,is_19781_lcd;
+		oplus,osc-support;
+		oplus,mdss-dsi-osc-clk-mode0-rate = <103600>;
+		oplus,mdss-dsi-osc-clk-mode1-rate = <101600>;
+		oppo,mdss-dsi-vendor-name = "SOFEF03F_M";
+		oppo,mdss-dsi-manufacture = "samsung1024";
+		//#ifdef OPLUS_BUG_STABILITY
+		/* xupengcheng@MULTIMEDIA.DISPLAY.LCD, 2020/10/28, add for 19781 LCD */
+		qcom,mdss-dsi-mode-sel-gpio-state = "single_port";
+		oplus,lcd-delay-vci-gpio = <1000>;
+		oplus,lcd-delay-disp-en-gpio = <0>;
+		oplus,lcd-delay-reset-gpio = <12000>;
+		oplus,lcd-delay-mode-sel-gpio = <1000>;
+		oplus,lcd-delay-set-pinctrl-state = <1000>;
+		oplus,lcd-delay-enable-regulator = <0>;
+		oplus,lcd-delay-lp11-state = <10000>;
+		//#endif /* OPLUS_BUG_STABILITY */
+		oppo,dsi-dc-brightness = <0 0xff>,
+					<1 0xfb>,
+					<2 0xfb>,
+					<3 0xfb>,
+					<4 0xfa>,
+					<5 0xf9>,
+					<6 0xf7>,
+					<8 0xf5>,
+					<10 0xf3>,
+					<15 0xf0>,
+					<20 0xea>,
+					<30 0xe0>,
+					<45 0xd0>,
+					<70 0xbc>,
+					<100 0x98>,
+					<120 0x80>,
+					<140 0x70>,
+					<160 0x58>,
+					<180 0x48>,
+					<200 0x30>,
+					<220 0x20>,
+					<240 0x10>,
+					<260 0x00>;
 
 		qcom,mdss-dsi-display-timings {
 			timing@0{
@@ -328,7 +370,7 @@
 					39 01 00 00 00 00 03 F0 5A 5A
 					15 01 00 00 00 00 02 B0 01
 					15 01 00 00 00 00 02 B7 5B				/* 0x5B : DLY OFF */
-					39 01 00 00 00 00 03 F0 A5 A5
+					39 01 00 00 05 00 03 F0 A5 A5
 					/* HBM Mode ON */
 					39 01 00 00 00 00 02 53 E0
 					/* 0xE0 Normal transition */
@@ -539,7 +581,7 @@
 				qcom,mdss-dsi-panel-status-command-state = "dsi_hs_mode";
 				qcom,mdss-dsi-panel-status-value = <0x9C>;
 				qcom,mdss-dsi-panel-status-read-length = <1>;
-				oppo,fod-on-vblank = <2>;
+				oppo,fod-on-vblank = <1>;
 				oppo,fod-off-vblank = <0>;
 				qcom,mdss-dsi-timing-switch-command = [
 					39 01 00 00 00 00 03 F0 5A 5A           /* Dimming Setting */

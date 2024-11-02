@@ -16,7 +16,6 @@
 #include <linux/init.h>
 #include <linux/console.h>
 #include <linux/cpu.h>
-#include <linux/cpuidle.h>
 #include <linux/syscalls.h>
 #include <linux/gfp.h>
 #include <linux/io.h>
@@ -33,8 +32,14 @@
 #include <linux/compiler.h>
 #include <linux/moduleparam.h>
 #include <linux/wakeup_reason.h>
+#include <linux/soc/qcom/smem_state.h>
+
 #include "power.h"
 #include <soc/qcom/boot_stats.h>
+
+#define PROC_AWAKE_ID 12 /* 12th bit */
+#define AWAKE_BIT BIT(PROC_AWAKE_ID)
+extern struct qcom_smem_state *smem_state;
 
 const char * const pm_labels[] = {
 	[PM_SUSPEND_TO_IDLE] = "freeze",
@@ -50,7 +55,7 @@ static const char * const mem_sleep_labels[] = {
 const char *mem_sleep_states[PM_SUSPEND_MAX];
 
 suspend_state_t mem_sleep_current = PM_SUSPEND_TO_IDLE;
-suspend_state_t mem_sleep_default = PM_SUSPEND_MAX;
+suspend_state_t mem_sleep_default = PM_SUSPEND_TO_IDLE;
 suspend_state_t pm_suspend_target_state;
 EXPORT_SYMBOL_GPL(pm_suspend_target_state);
 
@@ -71,6 +76,8 @@ void s2idle_set_ops(const struct platform_s2idle_ops *ops)
 	unlock_system_sleep();
 }
 
+extern void thaw_fingerprintd(void);
+
 static void s2idle_begin(void)
 {
 	s2idle_state = S2IDLE_STATE_NONE;
@@ -88,7 +95,6 @@ static void s2idle_enter(void)
 	raw_spin_unlock_irq(&s2idle_lock);
 
 	get_online_cpus();
-	cpuidle_resume();
 
 	/* Push all the CPUs into the idle loop. */
 	wake_up_all_idle_cpus();
@@ -96,7 +102,6 @@ static void s2idle_enter(void)
 	wait_event(s2idle_wait_head,
 		   s2idle_state == S2IDLE_STATE_WAKE);
 
-	cpuidle_pause();
 	put_online_cpus();
 
 	raw_spin_lock_irq(&s2idle_lock);
@@ -466,6 +471,8 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 	enable_nonboot_cpus();
 
  Platform_wake:
+	thaw_fingerprintd();
+
 	platform_resume_noirq(state);
 	dpm_resume_noirq(PMSG_RESUME);
 
@@ -572,6 +579,7 @@ static int enter_state(suspend_state_t state)
 	if (!mutex_trylock(&pm_mutex))
 		return -EBUSY;
 
+	pm_wakeup_clear(0);
 	if (state == PM_SUSPEND_TO_IDLE)
 		s2idle_begin();
 
@@ -635,7 +643,9 @@ int pm_suspend(suspend_state_t state)
 
 	pm_suspend_marker("entry");
 	pr_info("suspend entry (%s)\n", mem_sleep_labels[state]);
+	qcom_smem_state_update_bits(smem_state, AWAKE_BIT, 0);
 	error = enter_state(state);
+	qcom_smem_state_update_bits(smem_state, AWAKE_BIT, AWAKE_BIT);
 	if (error) {
 		suspend_stats.fail++;
 		dpm_save_failed_errno(error);

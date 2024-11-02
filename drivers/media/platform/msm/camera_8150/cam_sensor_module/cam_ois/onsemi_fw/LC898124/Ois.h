@@ -274,18 +274,6 @@ union	ULLNVAL {
 	} StUllnVal ;
 } ;
 
-
-// int Data Union
-union	FLTVAL {
-	int			SfFltVal ;
-	UINT32	UlLngVal ;
-	UINT16	UsDwdVal[ 2 ] ;
-	struct {
-		UINT16	UsHigVal ;
-		UINT16	UsLowVal ;
-	} StFltVal ;
-} ;
-
 #else	// BIG_ENDDIAN
 // Little endian
 // Word Data Union
@@ -323,23 +311,11 @@ union	ULLNVAL {
 		UINT32	UlHigVal ;
 	} StUllnVal ;
 } ;
-
-// int Data Union
-union	FLTVAL {
-	int			SfFltVal ;
-	UINT32	UlLngVal ;
-	UINT16	UsDwdVal[ 2 ] ;
-	struct {
-		UINT16	UsLowVal ;
-		UINT16	UsHigVal ;
-	} StFltVal ;
-} ;
 #endif	// __OIS_BIG_ENDIAN__
 
 typedef union WRDVAL	UnWrdVal ;
 typedef union DWDVAL	UnDwdVal;
 typedef union ULLNVAL	UnllnVal;
-typedef union FLTVAL	UnFltVal ;
 
 
 typedef struct STMESRAM {
@@ -492,13 +468,13 @@ typedef struct STACLVAL {
 
 struct tagMlMixingValue
 {
-	int	radianX;
-	int	radianY;
+	double	radianX;
+	double	radianY;
 
-	int	hx45x;
-	int	hy45x;
-	int	hy45y;
-	int	hx45y;
+	double	hx45x;
+	double	hy45x;
+	double	hy45y;
+	double	hx45y;
 
 	UINT8	hxsx;
 	UINT8	hysx;
@@ -508,10 +484,10 @@ struct tagMlMixingValue
 	INT32	hy45yL;		//! for Fixed point
 	INT32	hx45yL;		//! for Fixed point
 
-	int XonXmove[7];
-	int YonXmove[7];
-	int XonYmove[7];
-	int YonYmove[7];
+	double XonXmove[7];
+	double YonXmove[7];
+	double XonYmove[7];
+	double YonYmove[7];
 };
 typedef	struct tagMlMixingValue		mlMixingValue;
 
@@ -521,8 +497,8 @@ struct tagMlLinearityValue
 	UINT32	*dacX;			//! input parameter
 	UINT32	*dacY;			//! input parameter
 
-	int	*positionX;
-	int	*positionY;
+	double	*positionX;
+	double	*positionY;
 	UINT16	*thresholdX;
 	UINT16	*thresholdY;
 
@@ -556,25 +532,6 @@ typedef struct ACT_MOV_t	Act_Mov_t ;
 //****************************************************
 //	Debug
 //****************************************************
-#if 0
-
-#ifdef DEBUG
-#include <AT91SAM7S.h>
-#include <us.h>
- #define TRACE_INIT(x)			dbgu_init(x)
- #define TRACE(fmt, ...)		dbgu_printf(fmt, ## __VA_ARGS__)
- #define TRACE_DUMP(x,y)		dbg_Dump(x,y)
- #define TRACE_USB(fmt, ...)	dbg_UsbData(fmt, ## __VA_ARGS__)
-#else
- #define TRACE_INIT(x)
- #define TRACE(...)
- #define TRACE_DUMP(x,y)
- #define TRACE_USB(...)	
-#endif
-
-#else
-
-#define DEBUG 1
 #ifdef DEBUG
  #define TRACE_INIT(x)
  #define TRACE(...)		CAM_ERR(CAM_OIS, ## __VA_ARGS__)
@@ -585,8 +542,6 @@ typedef struct ACT_MOV_t	Act_Mov_t ;
  #define TRACE(...)
  #define TRACE_DUMP(x,y)
  #define TRACE_USB(...)
-#endif
-
 #endif
 
 #endif /* #ifndef OIS_H_ */
