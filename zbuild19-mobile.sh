@@ -40,6 +40,7 @@ NC='\033[0m'
 RED='\033[0;31m'
 LRD='\033[1;31m'
 LGR='\033[1;32m'
+CYAN='\033[1;36m'
 
 make_defconfig()
 {
@@ -51,7 +52,9 @@ make_defconfig()
 compile()
 {
     cd ${kernel_dir}
-    echo -e ${LGR} "######### Compiling kernel #########${NC}"
+    echo -e "${CYAN}**************************************${NC}"
+    echo -e "${CYAN}           Compiling  Kernel          ${NC}"
+    echo -e "${CYAN}**************************************${NC}"
     make -j$(nproc --all) \
     O=out \
     ARCH=${ARCH}\

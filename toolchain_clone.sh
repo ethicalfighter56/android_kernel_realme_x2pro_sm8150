@@ -46,5 +46,3 @@ function_cloneTC()
     fi
 }
 function_cloneTC
-cd ${kernel_dir}
-
