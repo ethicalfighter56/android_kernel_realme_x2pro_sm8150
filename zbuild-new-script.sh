@@ -9,9 +9,8 @@ LGR='\033[1;32m'
 CYAN='\033[1;36m'
 YELLOW='\033[1;33m'
 
-
 rm -rf out
-#make clean && make mrproper
+make clean && make mrproper
 
 KERNEL_DIR="${PWD}"
 CCACHE=$(command -v ccache)
@@ -31,7 +30,7 @@ export KBUILD_BUILD_USER=zahid
 export LOCALVERSION=+KSU
 
 # DEFINE VARIABLES & CLANG TOOLCHAIN
-TC_DIR=$HOME/02.KERNEL/TOOLCHAINS/toolchain
+TC_DIR=${HOME}/02.KERNEL/TOOLCHAINS/toolchain
 CLANG_DIR=$TC_DIR/clang-r522817
 
 ##Check if CLANG_DIR exists........
@@ -59,7 +58,7 @@ make_defconfig()
     echo -e ${LGR} "*********************************************${NC}"
     echo -e ${LGR} "########### Generating Defconfig ############${NC}"
     make -s ARCH=${ARCH} O=${OBJDIR} ${CONFIG_FILE} -j$(nproc --all)
-    make -s ARCH=${ARCH} O=${OBJDIR} menuconfig
+#    make -s ARCH=${ARCH} O=${OBJDIR} menuconfig
 }
 compile()
 {

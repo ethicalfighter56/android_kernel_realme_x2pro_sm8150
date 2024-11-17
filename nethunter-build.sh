@@ -1,60 +1,71 @@
 #!/bin/bash
 
-### git submodule add https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel-builder
-### cd kali-nethunter-kernel-builder/
-### export KBUILD_BUILD_HOST=ubuntu
 
-rm -rf out
-make clean && make mrproper
-
-kernel_dir="${PWD}"
-CCACHE=$(command -v ccache)
-objdir="${kernel_dir}/out"
-anykernel=$kernel_dir/anykernel
-builddir="${kernel_dir}/build"
-ZIMAGE=$kernel_dir/out/arch/arm64/boot/Image.gz-dtb
-kernel_name="samurai-4.14.355-NH"
-zip_name="$kernel_name-$(date +"%d%m%Y-%H%M")-KSU.zip"
-TC_DIR=$HOME/02.KERNEL/TOOLCHAIN/toolchain
-CLANG_DIR=$TC_DIR/clang-r536225
-export CONFIG_FILE="nethunter_defconfig"
-export ARCH="arm64"
-export KBUILD_BUILD_USER=zahid
-export LOCALVERSION=-NetHunter+KSU 
-
-export PATH="$CLANG_DIR/bin:$PATH"
-
-# Sync submodule
-git submodule init && git submodule update
-
-#Installing necessary components
-! sudo apt-get install bc git gnupg flex bison build-essential zip curl zlib1g-dev libc6-dev-i386 x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig libssl-dev ccache cpio
-
-if ! [ -d "$TC_DIR" ]; then
-    echo "Toolchain not found! Cloning to $TC_DIR..."
-    if ! git clone -q --depth=1 --single-branch https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 -b master $TC_DIR; then
-        echo "Cloning failed! Aborting..."
-        exit 1
-    fi
-fi
-
-# Colors
+# DEFINE COLORS
 NC='\033[0m'
 RED='\033[0;31m'
 LRD='\033[1;31m'
 LGR='\033[1;32m'
+CYAN='\033[1;36m'
+YELLOW='\033[1;33m'
 
+rm -rf out
+make clean && make mrproper
+
+KERNEL_DIR="${PWD}"
+CCACHE=$(command -v ccache)
+OBJDIR="${KERNEL_DIR}/out"
+Anykernel_DIR=$KERNEL_DIR/Anykernel3
+BUILDDIR="${KERNEL_DIR}/build"
+ZIMAGE=$KERNEL_DIR/out/arch/arm64/boot/Image.gz-dtb
+KERNEL_NAME="samurai-4.14.355"
+DATE=$(date +"[%d%m%Y-%H%M]")
+TIME=$(date +"%H.%M.%S")
+ZIP_NAME="$KERNEL_NAME-$DATE-KSU.zip"
+TC_CLONE_FILE=${KERNEL_DIR}/toolchain_clone.sh
+export CONFIG_FILE="nethunter_defconfig"
+export ARCH="arm64"
+export KBUILD_BUILD_HOST=kali
+export KBUILD_BUILD_USER=zahid
+export LOCALVERSION=-NetHunter+KSU
+
+# DEFINE VARIABLES & CLANG TOOLCHAIN
+TC_DIR=${HOME}/02.KERNEL/TOOLCHAINS/toolchain
+CLANG_DIR=$TC_DIR/clang-r522817
+
+##Check if CLANG_DIR exists........
+if ! [ -d "$TC_DIR" ]; then
+    echo -e "${LRD}Toolchain not found! Cloning to $TC_DIR...${NC}"
+    if ! bash $TC_CLONE_FILE; then
+        echo -e "${RED}Cloning failed! Aborting...${NC}"
+        exit 1      
+    fi
+fi
+
+echo -e "${YELLOW}Using clang directory: $CLANG_DIR${NC}"
+export PATH="$CLANG_DIR/bin:$PATH"
+
+##SYNC SUBMODULE
+git submodule init && git submodule update
+
+##Installing necessary components
+! sudo apt-get install bc git gnupg flex bison build-essential zip curl zlib1g-dev libc6-dev-i386 x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig libssl-dev ccache cpio axel bc build-essential ccache curl device-tree-compiler pandoc libncurses5-dev lynx lz4 fakeroot xz-utils bc build-essential ccache curl device-tree-compiler pandoc lynx lz4 fakeroot xz-utils
+
+##BUILD STARTED.....!!!
 make_defconfig()
 {
-    START=$(date +"%s")
+    BUILD_START=$(date +"%s")
+    echo -e ${LGR} "*********************************************${NC}"
     echo -e ${LGR} "########### Generating Defconfig ############${NC}"
-    make -s ARCH=${ARCH} O=${objdir} ${CONFIG_FILE} -j$(nproc --all)
-#    make -s ARCH=${ARCH} O=${objdir} menuconfig
+    make -s ARCH=${ARCH} O=${OBJDIR} ${CONFIG_FILE} -j$(nproc --all)
+#    make -s ARCH=${ARCH} O=${OBJDIR} menuconfig
 }
 compile()
 {
-    cd ${kernel_dir}
-    echo -e ${LGR} "######### Compiling kernel #########${NC}"
+    cd ${KERNEL_DIR}
+    echo -e "${CYAN}*********************************************${NC}"
+    echo -e "${CYAN}              COMPILING KERNEL               ${NC}"
+    echo -e "${CYAN}*********************************************${NC}"
     make -j$(nproc --all) \
     O=out \
     ARCH=${ARCH}\
@@ -68,42 +79,37 @@ compile()
 
 completion()
 {
-    cd ${objdir}
+    cd ${OBJDIR}
     COMPILED_IMAGE=arch/arm64/boot/Image.gz-dtb
     COMPILED_DTBO=arch/arm64/boot/dtbo.img
     if [[ -f ${COMPILED_IMAGE} && ${COMPILED_DTBO} ]]; then
 
-        git clone https://github.com/zahid5656/AnyKernel3.git -b nethunter $anykernel
+        git clone https://github.com/zahid5656/AnyKernel3.git -b nethunter $Anykernel_DIR
 
+        mv -f $ZIMAGE ${COMPILED_DTBO} $Anykernel_DIR
 
-        mv -f $ZIMAGE ${COMPILED_DTBO} $anykernel
-        
-        cp ${objdir}/drivers/media/dvb-frontends/*.ko $anykernel/modules/system/lib/modules
-        cp ${objdir}/drivers/media/dvb-frontends/drx39xyj/*.ko $anykernel/modules/system/lib/modules
-        cp ${objdir}/drivers/media/tuners/*.ko $anykernel/modules/system/lib/modules
-        rm -rf $anykernel/modules/system/lib/modules/placeholder
-
-        cd $anykernel
+        cd $Anykernel_DIR
         find . -name "*.zip" -type f
         find . -name "*.zip" -type f -delete
         zip -r AnyKernel.zip *
-        mv AnyKernel.zip $zip_name
-        mv $anykernel/$zip_name $kernel_dir/$zip_name
-        rm -rf $anykernel
-        END=$(date +"%s")
-        DIFF=$(($END - $START))
-        echo -e ${LGR} "############################################"
-        echo -e ${LGR} "########  Compiled Successfully!!  #########"
-        echo -e ${LGR} "############################################${NC}"
+        mv AnyKernel.zip $ZIP_NAME
+        mv $Anykernel_DIR/$ZIP_NAME $KERNEL_DIR/$ZIP_NAME
+        rm -rf $Anykernel_DIR
+        echo -e ${LGR} "###################################################"
+        echo -e ${LGR} "######   KERNEL COMPILED SUCCESSFULLY!!! :)  ######"
+        echo -e ${LGR} "###################################################${NC}"
+        BUILD_END=$(date +"%s")
+        DIFF=$(($BUILD_END - $BUILD_START))
+        echo -e "${LGR}BUILD COMPLETED in $(($DIFF / 60)) minute(s) & $(($DIFF % 60)) seconds.${NC}"
         exit 0
     else
-        echo -e ${RED} "############################################"
-        echo -e ${RED} "##        ERROR!!! Unsccessfull :'(       ##"
-        echo -e ${RED} "############################################${NC}"
+        echo -e ${LRD} "############################################"
+        echo -e ${LRD} "###       ERROR!!! Unsccessfull :'(      ###"
+        echo -e ${LRD} "############################################${NC}"
         exit 1
     fi
 }
 make_defconfig
 compile
 completion
-cd ${kernel_dir}
+cd ${KERNEL_DIR}
