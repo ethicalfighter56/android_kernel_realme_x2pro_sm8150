@@ -23,14 +23,14 @@ DATE=$(date +"[%d%m%Y-%H%M]")
 TIME=$(date +"%H.%M.%S")
 ZIP_NAME="$KERNEL_NAME-$DATE-KSU.zip"
 TC_CLONE_FILE=${KERNEL_DIR}/toolchain_clone.sh
-export CONFIG_FILE="nethunter_defconfig"
+export CONFIG_FILE="samurai_defconfig"
 export ARCH="arm64"
-export KBUILD_BUILD_HOST=kali
+export KBUILD_BUILD_HOST=ubuntu
 export KBUILD_BUILD_USER=zahid
-export LOCALVERSION=-NetHunter+KSU
+export LOCALVERSION=+KSU
 
 # DEFINE VARIABLES & CLANG TOOLCHAIN
-TC_DIR=${HOME}/02.KERNEL/TOOLCHAINS/toolchain
+TC_DIR=$KERNEL_DIR/toolchain
 CLANG_DIR=$TC_DIR/clang-r522817
 
 ##Check if CLANG_DIR exists........
@@ -46,7 +46,7 @@ echo -e "${YELLOW}Using clang directory: $CLANG_DIR${NC}"
 export PATH="$CLANG_DIR/bin:$PATH"
 
 ##SYNC SUBMODULE
-git submodule init && git submodule update
+#git submodule init && git submodule update
 
 ##Installing necessary components
 ! sudo apt-get install bc git gnupg flex bison build-essential zip curl zlib1g-dev libc6-dev-i386 x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig libssl-dev ccache cpio axel bc build-essential ccache curl device-tree-compiler pandoc libncurses5-dev lynx lz4 fakeroot xz-utils bc build-essential ccache curl device-tree-compiler pandoc lynx lz4 fakeroot xz-utils
@@ -82,12 +82,11 @@ completion()
     cd ${OBJDIR}
     COMPILED_IMAGE=arch/arm64/boot/Image.gz-dtb
     COMPILED_DTBO=arch/arm64/boot/dtbo.img
-    COMPILED_DTC=arch/arm64/boot/dts/qcom/sm8150-v2.dtb
-    if [[ -f ${COMPILED_IMAGE} && ${COMPILED_DTBO} && ${COMPILED_DTC} ]]; then
+    if [[ -f ${COMPILED_IMAGE} && ${COMPILED_DTBO} ]]; then
 
-        git clone https://github.com/zahid5656/AnyKernel3.git -b nethunter $Anykernel_DIR
+        git clone https://github.com/zahid5656/AnyKernel3.git $Anykernel_DIR
 
-        mv -f $ZIMAGE ${COMPILED_DTBO} ${COMPILED_DTC} $Anykernel_DIR
+        mv -f $ZIMAGE ${COMPILED_DTBO} $Anykernel_DIR
 
         cd $Anykernel_DIR
         find . -name "*.zip" -type f

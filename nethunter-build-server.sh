@@ -30,7 +30,7 @@ export KBUILD_BUILD_USER=zahid
 export LOCALVERSION=-NetHunter+KSU
 
 # DEFINE VARIABLES & CLANG TOOLCHAIN
-TC_DIR=${HOME}/02.KERNEL/TOOLCHAINS/toolchain
+TC_DIR=$KERNEL_DIR/toolchain
 CLANG_DIR=$TC_DIR/clang-r522817
 
 ##Check if CLANG_DIR exists........
