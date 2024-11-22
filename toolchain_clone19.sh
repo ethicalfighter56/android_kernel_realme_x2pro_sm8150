@@ -2,7 +2,7 @@
 
 KERNEL_DIR="${PWD}"
 TC_DIR=$KERNEL_DIR/toolchain
-CLANG_DIR=$TC_DIR/clang-r522817
+CLANG_DIR=$TC_DIR/clang-r536225
 
 # Colors
 NC='\033[0m'
@@ -21,30 +21,20 @@ function_cloneTC()
         echo -e ${LGR} "##### Already Cloned AOSP Clang!...#####"
         echo -e ${LGR} "××××××××××××××××××××××××××××××××××××××××${NC}"
         else
-        export CLANG_VERSION="clang-r522817"
+        export CLANG_VERSION="clang-r536225"
         echo -e ${RED} "××××××××××××××××××××××××××××××××××××××××"
         echo -e ${RED} "##########  It's not cloned...!#########"
         echo -e ${RED} "××××××××××××××××××××××××××××××××××××××××${NC}"
         echo -e ${LGR} "××××××××××××××××××××××××××××××××××××××××"
         echo -e ${LGR} "###########  Cloning it!... ############"
         echo -e ${LGR} "××××××××××××××××××××××××××××××××××××××××${NC}"
-        mkdir -p toolchain/clang-r522817
-        cd toolchain/clang-r522817 || exit
-        wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/${CLANG_VERSION}.tgz
-            tar -xf ${CLANG_VERSION}.tgz
-            rm -rf ${CLANG_VERSION}.tgz
-            cd .. || exit
-        git clone --depth=1 https://github.com/zahid5656/toolchain.git
+        mkdir -p toolchain
         cd toolchain
-        mv toolchain.zip ..
-        cd ..
-        unzip toolchain.zip
-        rm -rf toolchain toolchain.zip
+        git clone --depth=1 https://git.codelinaro.org/clo/la/kernelplatform/prebuilts-master/clang/host/linux-x86.git -b aosp-new/main-kernel clang-r536225
+            cd .. || exit
         echo -e ${LGR} "××××××××××××××××××××××××××××××××××××××××"
         echo -e ${LGR} "######  AOSP Toolchain Cloned... #######"
         echo -e ${LGR} "××××××××××××××××××××××××××××××××××××××××${NC}"
     fi
 }
 function_cloneTC
-cd ${kernel_dir}
-
