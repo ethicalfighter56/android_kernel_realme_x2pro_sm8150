@@ -527,7 +527,7 @@
 		polling-delay-passive = <100>;
 		polling-delay = <0>;
 		thermal-governor = "step_wise";
-		thermal-sensors = <&pm8150l_bcl 5>;
+		thermal-sensors = <&pm8150b_tz>;
 		wake-capable-sensor;
 
 		trips {
@@ -543,7 +543,7 @@
 		polling-delay-passive = <100>;
 		polling-delay = <0>;
 		thermal-governor = "step_wise";
-		thermal-sensors = <&pm8150l_bcl 6>;
+		thermal-sensors = <&pm8150b_tz>;
 		wake-capable-sensor;
 
 		trips {
@@ -559,7 +559,7 @@
 		polling-delay-passive = <100>;
 		polling-delay = <0>;
 		thermal-governor = "step_wise";
-		thermal-sensors = <&pm8150l_bcl 7>;
+		thermal-sensors = <&pm8150b_tz>;
 		wake-capable-sensor;
 
 		trips {
